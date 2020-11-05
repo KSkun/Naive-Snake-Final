@@ -1,0 +1,91 @@
+<body>
+  <canvas id="map">
+
+  </canvas>
+</body>
+
+<script>
+  const scale = 4
+  const mapSize = 205
+  let socket = new WebSocket("ws://localhost:9961/");
+  const canvas = document.getElementById("map")
+  const ctx = canvas.getContext('2d');
+  function initCanvas() {
+    const size = mapSize * scale
+    canvas.width = size
+    canvas.height = size
+    canvas.style.height = `${size}px`
+    canvas.style.height = `${size}px`
+  }
+  initCanvas()
+  function draw(x, y, val) {
+    const valMap = {
+      0: "ground",
+      1: "sting",
+      2: "shoe",
+      3: "telescope",
+      4: "spoiled_fruit",
+      5: "single_fruit",
+      6: "five_fruit",
+      8: "body",
+      9: "bot1_body",
+      10: "bot2_body",
+      11: "bot3_body",
+      12: "head",
+      13: "bot1_head",
+      14: "bot2_head",
+      15: "bot3_head",
+      255: "unknown"
+    }
+    const colorMap = {
+      ground: "#7C4B00",
+      sting: "#BE002F",
+      shoe: "#B36D61",
+      telescope: "#E0EEE8",
+      spoiled_fruit: "#896C39",
+      single_fruit: "#FFA631",
+      five_fruit: "#FF7500",
+      body: "#789262",
+      head: "#AFDD22",
+      bot: "#424C50",
+      unknown: "#D1D9E0"
+    }
+    const str = valMap[val]
+    let color
+    if (str.match("bot")) {
+      color = colorMap.bot
+    } else {
+      color = colorMap[str]
+    }
+    ctx.fillStyle = color
+    ctx.fillRect(x * scale, y * scale, scale, scale)
+  }
+  socket.onopen = function (e) {
+    console.log("[open] Connection established");
+  };
+
+  socket.onmessage = function (event) {
+    console.log(`[message] Data received from server:`);
+    const s = event.data
+    const map = JSON.parse(s).map
+    for (let i = 0; i < map.length; i++) {
+      for (let j = 0; j < map[i].length; j++) {
+        draw(i, j, map[i][j])
+      }
+    }
+  };
+
+  socket.onclose = function (event) {
+    if (event.wasClean) {
+      console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    } else {
+      // e.g. server process killed or network down
+      // event.code is usually 1006 in this case
+      console.log('[close] Connection died');
+    }
+  };
+
+  socket.onerror = function (error) {
+    console.log(`[error] ${error.message}`);
+  };
+</script>
